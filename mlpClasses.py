@@ -1,15 +1,17 @@
 import sys
 
 
-class Perceptron:
-	pass
+
 
 
 class Layer:
+
 	def __init__(self, size, type):
+		self.values = []
+		self.weights = []
 		self.size = size
 		self.type = type
-		# self.weights
+		self.next = None
 
 
 class Network:
