@@ -1,6 +1,6 @@
 import sys
 import random
-
+import math
 
 
 
@@ -17,12 +17,29 @@ import random
 class Model:
 
 	def __init__(self, nb_inputs, layers, func, learning_rate):
-		self.layers = layers
+		self.layers = layers + [2]
 		self.func = func
 		self.learning_rate = learning_rate
-		self.weights = self.generateWeights([nb_inputs] + layers + [1])
+		self.weights = self.generateWeights([nb_inputs] + layers)
 		self.bias = self.generateBias(layers)
 		print(self.bias)
+
+
+	def sigmoid(self, x):
+		return 1 / (1 + math.exp(x))
+
+
+	def hyperbolicTangent(self, x):
+		return (math.exp(x) - math.exp(-x)) / (math.exp(x) + math.exp(-x))
+
+
+	def softmax(self, out_vect):
+		div = sum(math.exp(out_vect[i]) for i in range(len(out_vect)))
+
+		result = []
+		for i in range(len(out_vect)):
+			result.append(math.exp(out_vect[i])/ div)
+		return result
 
 
 	def generateWeights(self, layers):
