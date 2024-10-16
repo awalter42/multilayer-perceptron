@@ -17,20 +17,30 @@ import math
 class Model:
 
 	def __init__(self, nb_inputs, layers, func, learning_rate):
-		self.layers = layers + [2]
+		self.layers = [nb_inputs] + layers + [2]
 		self.func = func
 		self.learning_rate = learning_rate
-		self.weights = self.generateWeights([nb_inputs] + layers)
+		self.weights = self.generateWeights(self.layers)
 		self.bias = self.generateBias(layers)
-		print(self.bias)
+		self.expectedOutputs = []
+		self.predictedOutputs = []
 
 
 	def sigmoid(self, x):
-		return 1 / (1 + math.exp(x))
+		return 1 / (1 + math.exp(-x))
+
+
+	def derivSigmoid(self, x):
+		sigm = sigmoid(x)
+		return	sigm * (1 - sigm)
 
 
 	def hyperbolicTangent(self, x):
-		return (math.exp(x) - math.exp(-x)) / (math.exp(x) + math.exp(-x))
+		return (2 / (1 + math.exp(-2 * x)) ) - 1
+
+
+	def derivHyperbolic(self, x):
+		return 1 - hyperbolicTangent(x)**2
 
 
 	def softmax(self, out_vect):
@@ -42,6 +52,20 @@ class Model:
 		return result
 
 
+	def binaryCrossEntropy(self):
+		l = []
+		for i in range(len(self.expectedOutputs)):
+			calc = self.expectedOutputs[i] * math.log(self.predictedOutputs[i])
+			calc += (1 - self.expectedOutputs[i]) * math.log(1 - self.predictedOutputs[i])
+			l.append(calc)
+
+		return mean(l)
+
+
+	def derivBCE(self, expected, predicted):
+		return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
+
+
 	def generateWeights(self, layers):
 		weights = []
 		for i in range(len(layers) - 1):
@@ -51,6 +75,7 @@ class Model:
 				for j in range(layers[i + 1]):
 					weight_li[l].append(round(random.uniform(-10.0, 10.0), 3))
 			weights.append(weight_li)
+		print(weights)
 		return weights
 
 
