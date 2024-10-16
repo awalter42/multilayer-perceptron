@@ -26,6 +26,29 @@ class Model:
 		self.predictedOutputs = []
 
 
+	def generateWeights(self, layers):
+		weights = []
+		for i in range(len(layers) - 1):
+			weight_li = []
+			for l in range(layers[i]):
+				weight_li.append([])
+				for j in range(layers[i + 1]):
+					weight_li[l].append(round(random.uniform(-10.0, 10.0), 3))
+			weights.append(weight_li)
+		print(weights)
+		return weights
+
+
+	def generateBias(self, layers):
+		bias = []
+		for i in range(len(layers)):
+			tmp = []
+			for j in range(layers[i]):
+				tmp.append(round(random.uniform(-1.0, 1.0), 3))
+			bias.append(tmp)
+		return bias
+
+
 	def sigmoid(self, x):
 		return 1 / (1 + math.exp(-x))
 
@@ -52,11 +75,11 @@ class Model:
 		return result
 
 
-	def binaryCrossEntropy(self):
+	def binaryCrossEntropy(self, expectedOutputs, predictedOutputs):
 		l = []
-		for i in range(len(self.expectedOutputs)):
-			calc = self.expectedOutputs[i] * math.log(self.predictedOutputs[i])
-			calc += (1 - self.expectedOutputs[i]) * math.log(1 - self.predictedOutputs[i])
+		for i in range(len(expectedOutputs)):
+			calc = expectedOutputs[i] * math.log(predictedOutputs[i])
+			calc += (1 - expectedOutputs[i]) * math.log(1 - predictedOutputs[i])
 			l.append(calc)
 
 		return mean(l)
@@ -66,24 +89,47 @@ class Model:
 		return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
 
 
-	def generateWeights(self, layers):
-		weights = []
-		for i in range(len(layers) - 1):
-			weight_li = []
-			for l in range(layers[i]):
-				weight_li.append([])
-				for j in range(layers[i + 1]):
-					weight_li[l].append(round(random.uniform(-10.0, 10.0), 3))
-			weights.append(weight_li)
-		print(weights)
-		return weights
+	# def feedForward(self, data, train=False):
 
 
-	def generateBias(self, layers):
-		bias = []
-		for i in range(len(layers)):
-			tmp = []
-			for j in range(layers[i]):
-				tmp.append(round(random.uniform(-1.0, 1.0), 3))
-			bias.append(tmp)
-		return bias
+
+	def fit(self, dataTrain, dataValid, loss, batch, epoch):
+		trainLossHistory = []
+		trainAccuracyHistory = []
+		validationLossHistory = []
+		validationAccuracyHistory = []
+		for _ in range(epoch):
+			trainPredictions = []
+			trainExpected = []
+			firstIter = True
+			for j in range(len(dataTrain)):
+
+				if j % batch == 0 and not firstIter:
+					self.updateWeightBias()
+				firstIter = False
+
+				expected = dataTrain[j][0]
+				prediction = self.feedForward(dataTrain[j][1:], train=True)
+				trainPredictions.append(prediction)
+				trainExpected.append(expected)
+
+			self.updateWeightBias()
+			validationPrediction, validationExpected = self.validate(dataValid)
+
+			trainLossHistory = self.binaryCrossEntropy(trainPredictions, trainExpected)
+			validationLossHistory = self.binaryCrossEntropy(validationPrediction, validationExpected)
+
+			trainAccuracyHistory = self.getAccuracy(trainPredictions, trainExpected)
+			validationAccuracyHistory = self.getAccuracy(validationPredictions, validationExpected)
+
+
+
+# TODO
+
+# feedForward -> predi int
+# calculateGradients :(
+# validate -> predi list, expected list
+# updateWeightBias -> None
+# getAccuracy -> accuracy int
+
+
