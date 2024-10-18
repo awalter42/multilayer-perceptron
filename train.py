@@ -1,3 +1,4 @@
+import sys
 import argparse
 import random
 from mlpClasses import Model
@@ -31,7 +32,7 @@ def normalize(data):
 
 	newData = []
 	for i in range(len(data)):
-		newData.append([data[0]])
+		newData.append([data[i][0]])
 
 	for i in range(len(norm_vals)):
 		vals = [r[i + 1] for r in data]
@@ -64,9 +65,8 @@ if __name__ == '__main__':
 
 	cleanTrainingData = normalize(rawTrainingData)
 	cleanValidData = normalize(rawValidData)
-
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
-
-	model = Model(nb_inputs, args.layer, args.func, args.learning_rate)
+	model = Model(nb_inputs, args.layer, args.learning_rate)
+	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs)
 
