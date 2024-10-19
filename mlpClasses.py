@@ -1,12 +1,14 @@
 import sys
 import random
 import math
+import mpmath
 from statistics import mean
+
+mpmath.mp.dps = 300
 
 
 def sigmoid(x):
-	return 1 / (1 + math.exp(-x))
-
+	return 1 / (1 + mpmath.exp(-x))
 
 def derivSigmoid(x):
 	sigm = sigmoid(x)
@@ -14,7 +16,7 @@ def derivSigmoid(x):
 
 
 def hyperbolicTangent(x):
-	return (2 / (1 + math.exp(-2 * x)) ) - 1
+	return (2 / (1 + mpmath.exp(-2 * x)) ) - 1
 
 
 def derivHyperbolic(x):
@@ -22,11 +24,11 @@ def derivHyperbolic(x):
 
 
 def softmax(out_vect):
-	div = sum(math.exp(out_vect[i]) for i in range(len(out_vect)))
+	div = sum(mpmath.exp(out_vect[i]) for i in range(len(out_vect)))
 
 	result = []
 	for i in range(len(out_vect)):
-		result.append(math.exp(out_vect[i])/ div)
+		result.append(mpmath.exp(out_vect[i])/ div)
 	return result
 
 
@@ -37,11 +39,12 @@ def binaryCrossEntropy(expectedOutputs, predictedOutputs):
 		calc += (1 - expectedOutputs[i]) * math.log(1 - predictedOutputs[i])
 		l.append(calc)
 
-	return mean(l)
+	return -1 * mean(l)
 
 
 def derivBCE(expected, predicted):
 	return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
+
 
 
 class Layer:
@@ -125,7 +128,6 @@ class Layer:
 			self.next.updateWeightBias()
 
 
-
 	def derivActivate(self, output, func):
 		f = func.lower()
 		if f == 'sigmoid':
@@ -159,51 +161,59 @@ class Layer:
 			activ_output = self.activate(output, func)
 			out = self.next.feedForward(activ_output, output, func, loss, expect, train=train)
 
-		if train and self.isOutput:
-			costDeriv = derivBCE(expect[0], out[0])
+		if train:
 			derivated = self.derivActivate(z_list, func)
+			if self.isOutput:
+				costDeriv = derivBCE(expect[0], out[0])
 
-			for j in range(self.size):
-				calc = 1 * derivated[j] * costDeriv
-				self.previous.gradBias[j].append(calc)
-
-			for i in range(self.previous.size):
 				for j in range(self.size):
-					prev_activated = self.previous.values[i]
-					calc = prev_activated * derivated[i] * costDeriv
-					self.previous.gradWeight[i][j].append(calc)
+					calc = 1 * derivated[j] * costDeriv
+					self.previous.gradBias[j].append(float(calc))
 
-			gradNeuron = []
-			for i in range(self.previous.size):
-				tab = []
+				gradNeuron = []
+				for i in range(self.previous.size):
+					tab = []
+					for j in range(self.size):
+						prev_activated = self.previous.values[i]
+						calc = prev_activated * derivated[j] * costDeriv
+						self.previous.gradWeight[i][j].append(float(calc))
+						calc = self.previous.weight[i][j] * derivated[j] * costDeriv
+						tab.append(float(calc))
+					gradNeuron.append(sum(tab))
+
+				# gradNeuron = []
+				# for i in range(self.previous.size):
+				# 	tab = []
+				# 	for j in range(self.size):
+				# 		calc = self.previous.weight[i][j] * derivated[j] * costDeriv
+				# 		tab.append(float(calc))
+				# 	gradNeuron.append(sum(tab))
+				self.previous.gradNeuron = gradNeuron
+
+			elif self.previous != None:
 				for j in range(self.size):
-					calc = self.previous.weight[i][j] * derivated[j] * costDeriv
-					tab.append(calc)
-				gradNeuron.append(sum(tab))
-			self.previous.gradNeuron = gradNeuron
+					calc = 1 * derivated[j] * self.gradNeuron[j]
+					self.previous.gradBias[j].append(float(calc))
 
-		elif train and self.previous != None:
-			derivated = self.derivActivate(z_list, func)
+				gradNeuron = []
+				for i in range(self.previous.size):
+					tab = []
+					for j in range(self.size):
+						prev_activated = self.previous.values[i]
+						calc = prev_activated * derivated[j] * self.gradNeuron[j]
+						self.previous.gradWeight[i][j].append(float(calc))
+						calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
+						tab.append(float(calc))
+					gradNeuron.append(sum(tab))
 
-			for j in range(self.size):
-				calc = 1 * derivated[j] * self.gradNeuron[j]
-				self.previous.gradBias[j].append(calc)
-
-			for i in range(self.previous.size):
-				for j in range(self.size):
-					prev_activated = self.previous.values[i]
-					calc = prev_activated * derivated[j] * self.gradNeuron[j]
-					self.previous.gradWeight[i][j].append(calc)
-
-			gradNeuron = []
-			for i in range(self.previous.size):
-				tab = []
-				for j in range(self.size):
-					calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
-					tab.append(calc)
-				gradNeuron.append(sum(tab))
-			self.previous.gradNeuron = gradNeuron
-
+				# gradNeuron = []
+				# for i in range(self.previous.size):
+				# 	tab = []
+				# 	for j in range(self.size):
+				# 		calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
+				# 		tab.append(float(calc))
+				# 	gradNeuron.append(sum(tab))
+				self.previous.gradNeuron = gradNeuron
 
 		return out
 
@@ -260,12 +270,40 @@ class Model:
 		return bias
 
 
+	def validate(self, dataValid, func, loss):
+		validationProbability = []
+		validationPrediction = []
+		validationExpected = []
+		for line in dataValid:
+			expected = line[0]
+
+			expect = [1, 1]
+			expect[expected] -= 1
+			prediction = self.inputLayer.feedForward(line[1:], [], func, loss, expect, train=False)
+			validationProbability.append(prediction[0])
+			validationPrediction.append(prediction.index(min(prediction)))
+			validationExpected.append(expected)
+
+		return validationPrediction, validationExpected, validationProbability
+
+
+	def getAccuracy(self, expected, prediction):
+		result = []
+		for i in range(len(expected)):
+			if expected[i] == prediction[i]:
+				result.append(1.0)
+			else:
+				result.append(0.0)
+		return mean(result)
+
+
 	def fit(self, dataTrain, dataValid, func, loss, batch, epoch):
 		trainLossHistory = []
 		trainAccuracyHistory = []
 		validationLossHistory = []
 		validationAccuracyHistory = []
-		for _ in range(epoch):
+		for i in range(epoch):
+			trainProbability = []
 			trainPredictions = []
 			trainExpected = []
 			firstIter = True
@@ -280,28 +318,25 @@ class Model:
 				expect = [1, 1]
 				expect[expected] -= 1
 				prediction = self.inputLayer.feedForward(dataTrain[j][1:], [], func, loss, expect, train=True)
-				trainPredictions.append(prediction)
+				trainProbability.append(prediction[0])
+				trainPredictions.append(prediction.index(min(prediction)))
 				trainExpected.append(expected)
 			self.inputLayer.updateWeightBias()
 
-			self.inputLayer.printLayers()
-			sys.exit()
+			validationPrediction, validationExpected, validationProbability = self.validate(dataValid, func, loss)
 
-			validationPrediction, validationExpected = self.validate(dataValid)
+			trainLossHistory.append(binaryCrossEntropy(trainExpected, trainProbability))
+			validationLossHistory.append(binaryCrossEntropy(validationExpected, validationProbability))
 
-			trainLossHistory = self.binaryCrossEntropy(trainPredictions, trainExpected)
-			validationLossHistory = self.binaryCrossEntropy(validationPrediction, validationExpected)
+			trainAccuracyHistory.append(self.getAccuracy(trainPredictions, trainExpected))
+			validationAccuracyHistory.append(self.getAccuracy(validationPrediction, validationExpected))
 
-			trainAccuracyHistory = self.getAccuracy(trainPredictions, trainExpected)
-			validationAccuracyHistory = self.getAccuracy(validationPredictions, validationExpected)
 
+			print(f'epoch {i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
 
 
 # TODO
 
-# calculateGradients :(
-# validate -> predi list, expected list
-# updateWeightBias -> None
 # getAccuracy -> accuracy int
 
 

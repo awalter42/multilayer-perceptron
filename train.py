@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-l', '--layer', nargs='+', type=int, default=[10, 10], required=False)
-	parser.add_argument('-e', '--epochs', type=int, default=50, required=False)
+	parser.add_argument('-e', '--epochs', type=int, default=10, required=False)
 	parser.add_argument('-L', '--loss', type=str, default='binaryCrossentropy', required=False)
 	parser.add_argument('-f', '--func', type=str, default='sigmoid', required=False)
 	parser.add_argument('-r', '--learning_rate', type=float, default=0.01, required=False)
