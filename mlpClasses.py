@@ -1,6 +1,7 @@
 import sys
 import random
 import math
+from statistics import mean
 
 
 def sigmoid(x):
@@ -52,21 +53,24 @@ class Layer:
 		self.next = None
 		self.weight = None
 		self.bias = None
+		self.gradWeight = []
+		self.gradBias = []
 
 
 	def printLayers(self):
 		print("weights:")
-		for w in self.weight:
-			print(w)
+		for i in range(len(self.weight)):
+			print(self.weight[i])
+			print(self.gradWeight[i])
+
 		print("\nbias:")
-		print(self.bias, '\n', '\n')
+		print(self.bias)
+		print(self.gradBias, '\n', '\n')
 		if not self.next.isOutput:
 			self.next.printLayers()
 
 
 	def addValue(self, v):
-		if self.values == []:
-			self.size = len(v)
 		self.values.append(v)
 
 
@@ -76,10 +80,17 @@ class Layer:
 
 	def setWeight(self, weight):
 		self.weight = weight
+		for l in self.weight:
+			grad = []
+			for i in range(len(l)):
+				grad.append([])
+			self.gradWeight.append(grad)
 
 
 	def setBias(self, bias):
 		self.bias = bias
+		for i in range(len(bias)):
+			self.gradBias.append([])
 
 
 	def activate(self, output, func):
@@ -93,11 +104,46 @@ class Layer:
 		return output
 
 
+	def updateWeightBias(self):
+		for i in range(len(self.weight)):
+			for j in range(len(self.weight[i])):
+				self.weight[i][j] -= mean(self.gradWeight[i][j])
+		self.gradWeight = []
+		for l in self.weight:
+			grad = []
+			for i in range(len(l)):
+				grad.append([])
+			self.gradWeight.append(grad)
 
-	def feedForward(self, input_list, func, loss, expect, train=False):
-		if self.isOutput == True:
-			output = softmax(input_list)
-			return output
+		for i in range(len(self.bias)):
+			self.bias[i] -= mean(self.gradBias[i])
+		self.gradBias = []
+		for i in range(len(self.bias)):
+			self.gradBias.append([])
+
+		if not self.next.isOutput:
+			self.next.updateWeightBias()
+
+
+
+	def derivActivate(self, output, func):
+		f = func.lower()
+		if f == 'sigmoid':
+			for i in range(len(output)):
+				output[i] = derivSigmoid(output[i])
+		elif f == 'hyperbolicTangent' or f == 'tanh':
+			for i in range(len(output)):
+				output[i] = derivHyperbolic(output[i])
+		return output
+
+
+	def feedForward(self, input_list, z_list, func, loss, expect, train=False):
+		self.size = len(input_list)
+		for value in input_list:
+			self.addValue(value)
+
+		if self.isOutput:
+			out = softmax(input_list)
 		else:
 			output = []
 			for _ in range(len(self.weight[0])):
@@ -110,8 +156,54 @@ class Layer:
 			for i in range(len(self.bias)):
 				output[i] += self.bias[i]
 
-			output = self.activate(output, func)
-			out = self.next.feedForward(output, func, loss, expect, train=train)
+			activ_output = self.activate(output, func)
+			out = self.next.feedForward(activ_output, output, func, loss, expect, train=train)
+
+		if train and self.isOutput:
+			costDeriv = derivBCE(expect[0], out[0])
+			derivated = self.derivActivate(z_list, func)
+
+			for j in range(self.size):
+				calc = 1 * derivated[j] * costDeriv
+				self.previous.gradBias[j].append(calc)
+
+			for i in range(self.previous.size):
+				for j in range(self.size):
+					prev_activated = self.previous.values[i]
+					calc = prev_activated * derivated[i] * costDeriv
+					self.previous.gradWeight[i][j].append(calc)
+
+			gradNeuron = []
+			for i in range(self.previous.size):
+				tab = []
+				for j in range(self.size):
+					calc = self.previous.weight[i][j] * derivated[j] * costDeriv
+					tab.append(calc)
+				gradNeuron.append(sum(tab))
+			self.previous.gradNeuron = gradNeuron
+
+		elif train and self.previous != None:
+			derivated = self.derivActivate(z_list, func)
+
+			for j in range(self.size):
+				calc = 1 * derivated[j] * self.gradNeuron[j]
+				self.previous.gradBias[j].append(calc)
+
+			for i in range(self.previous.size):
+				for j in range(self.size):
+					prev_activated = self.previous.values[i]
+					calc = prev_activated * derivated[j] * self.gradNeuron[j]
+					self.previous.gradWeight[i][j].append(calc)
+
+			gradNeuron = []
+			for i in range(self.previous.size):
+				tab = []
+				for j in range(self.size):
+					calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
+					tab.append(calc)
+				gradNeuron.append(sum(tab))
+			self.previous.gradNeuron = gradNeuron
+
 
 		return out
 
@@ -127,7 +219,6 @@ class Model:
 		self.expectedOutputs = []
 		self.predictedOutputs = []
 		self.setupLayers()
-		# self.inputLayer.printLayers()
 
 
 	def setupLayers(self):
@@ -181,22 +272,21 @@ class Model:
 			for j in range(len(dataTrain)):
 
 				if j % batch == 0 and not firstIter:
-					sys.exit()
-					self.updateWeightBias()
+					self.inputLayer.updateWeightBias()
 				firstIter = False
 
 				expected = dataTrain[j][0]
 
 				expect = [1, 1]
 				expect[expected] -= 1
-				prediction = self.inputLayer.feedForward(dataTrain[j][1:], func, loss, expect, train=True)
-				# print(prediction, expect)
+				prediction = self.inputLayer.feedForward(dataTrain[j][1:], [], func, loss, expect, train=True)
 				trainPredictions.append(prediction)
 				trainExpected.append(expected)
+			self.inputLayer.updateWeightBias()
+
+			self.inputLayer.printLayers()
 			sys.exit()
 
-
-			self.updateWeightBias()
 			validationPrediction, validationExpected = self.validate(dataValid)
 
 			trainLossHistory = self.binaryCrossEntropy(trainPredictions, trainExpected)
