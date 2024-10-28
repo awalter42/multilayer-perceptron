@@ -4,11 +4,12 @@ import math
 import mpmath
 from statistics import mean
 
-mpmath.mp.dps = 300
+mpmath.mp.dps = 5
 
 
 def sigmoid(x):
-	return 1 / (1 + mpmath.exp(-x))
+	return float(1 / (1 + mpmath.exp(-x)))
+
 
 def derivSigmoid(x):
 	sigm = sigmoid(x)
@@ -16,7 +17,7 @@ def derivSigmoid(x):
 
 
 def hyperbolicTangent(x):
-	return (2 / (1 + mpmath.exp(-2 * x)) ) - 1
+	return float((2 / (1 + mpmath.exp(-2 * x)) ) - 1)
 
 
 def derivHyperbolic(x):
@@ -24,11 +25,11 @@ def derivHyperbolic(x):
 
 
 def softmax(out_vect):
-	div = sum(mpmath.exp(out_vect[i]) for i in range(len(out_vect)))
+	div = sum(float(mpmath.exp(out_vect[i])) for i in range(len(out_vect)))
 
 	result = []
 	for i in range(len(out_vect)):
-		result.append(mpmath.exp(out_vect[i])/ div)
+		result.append(float(mpmath.exp(out_vect[i])/ div))
 	return result
 
 
@@ -98,34 +99,28 @@ class Layer:
 
 	def activate(self, output, func):
 		f = func.lower()
+		activ_output = []
 		if f == 'sigmoid':
 			for i in range(len(output)):
-				output[i] = sigmoid(output[i])
+				activ_output.append(sigmoid(output[i]))
 		elif f == 'hyperbolicTangent' or f == 'tanh':
 			for i in range(len(output)):
-				output[i] = hyperbolicTangent(output[i])
-		return output
+				activ_output.append(hyperbolicTangent(output[i]))
+		return activ_output
 
 
-	def updateWeightBias(self):
+	def updateWeightBias(self, learning_rate):
 		for i in range(len(self.weight)):
 			for j in range(len(self.weight[i])):
-				self.weight[i][j] -= mean(self.gradWeight[i][j])
-		self.gradWeight = []
-		for l in self.weight:
-			grad = []
-			for i in range(len(l)):
-				grad.append([])
-			self.gradWeight.append(grad)
+				self.weight[i][j] -= learning_rate * mean(self.gradWeight[i][j])
+				self.gradWeight[i][j] = []
 
 		for i in range(len(self.bias)):
-			self.bias[i] -= mean(self.gradBias[i])
-		self.gradBias = []
-		for i in range(len(self.bias)):
-			self.gradBias.append([])
+			self.bias[i] -= learning_rate * mean(self.gradBias[i])
+			self.gradBias[i] = []
 
 		if not self.next.isOutput:
-			self.next.updateWeightBias()
+			self.next.updateWeightBias(learning_rate)
 
 
 	def derivActivate(self, output, func):
@@ -140,6 +135,7 @@ class Layer:
 
 
 	def feedForward(self, input_list, z_list, func, loss, expect, train=False):
+
 		self.size = len(input_list)
 		for value in input_list:
 			self.addValue(value)
@@ -165,29 +161,32 @@ class Layer:
 			derivated = self.derivActivate(z_list, func)
 			if self.isOutput:
 				costDeriv = derivBCE(expect[0], out[0])
+				# costDeriv = 2 * (expect[0] - out[0])
+
 
 				for j in range(self.size):
 					calc = 1 * derivated[j] * costDeriv
 					self.previous.gradBias[j].append(float(calc))
 
-				gradNeuron = []
+				# for i in range(self.previous.size):
+				# 	for j in range(self.size):
+				# 		prev_activated = self.previous.values[i]
+				# 		calc = (input_list[j] - expect[0]) * prev_activated
+				# 		self.previous.gradWeight[i][j].append(float(calc))
+
 				for i in range(self.previous.size):
-					tab = []
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
 						calc = prev_activated * derivated[j] * costDeriv
 						self.previous.gradWeight[i][j].append(float(calc))
+
+				gradNeuron = []
+				for i in range(self.previous.size):
+					tab = []
+					for j in range(self.size):
 						calc = self.previous.weight[i][j] * derivated[j] * costDeriv
 						tab.append(float(calc))
 					gradNeuron.append(sum(tab))
-
-				# gradNeuron = []
-				# for i in range(self.previous.size):
-				# 	tab = []
-				# 	for j in range(self.size):
-				# 		calc = self.previous.weight[i][j] * derivated[j] * costDeriv
-				# 		tab.append(float(calc))
-				# 	gradNeuron.append(sum(tab))
 				self.previous.gradNeuron = gradNeuron
 
 			elif self.previous != None:
@@ -195,24 +194,25 @@ class Layer:
 					calc = 1 * derivated[j] * self.gradNeuron[j]
 					self.previous.gradBias[j].append(float(calc))
 
-				gradNeuron = []
+				# for i in range(self.previous.size):
+				# 	for j in range(self.size):
+				# 		prev_activated = self.previous.values[i]
+				# 		calc = (input_list[j] - expect[0]) * prev_activated
+				# 		self.previous.gradWeight[i][j].append(float(calc))
+
 				for i in range(self.previous.size):
-					tab = []
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
 						calc = prev_activated * derivated[j] * self.gradNeuron[j]
 						self.previous.gradWeight[i][j].append(float(calc))
+
+				gradNeuron = []
+				for i in range(self.previous.size):
+					tab = []
+					for j in range(self.size):
 						calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
 						tab.append(float(calc))
 					gradNeuron.append(sum(tab))
-
-				# gradNeuron = []
-				# for i in range(self.previous.size):
-				# 	tab = []
-				# 	for j in range(self.size):
-				# 		calc = self.previous.weight[i][j] * derivated[j] * self.gradNeuron[j]
-				# 		tab.append(float(calc))
-				# 	gradNeuron.append(sum(tab))
 				self.previous.gradNeuron = gradNeuron
 
 		return out
@@ -247,7 +247,6 @@ class Model:
 		prev.setNext(self.outputLayer)
 
 
-
 	def generateWeights(self, layers):
 		weights = []
 		for i in range(len(layers) - 1):
@@ -255,7 +254,7 @@ class Model:
 			for l in range(layers[i]):
 				weight_li.append([])
 				for j in range(layers[i + 1]):
-					weight_li[l].append(round(random.uniform(-10.0, 10.0), 3))
+					weight_li[l].append(random.uniform(-10.0, 10.0))
 			weights.append(weight_li)
 		return weights
 
@@ -265,7 +264,7 @@ class Model:
 		for i in range(1, len(layers)):
 			tmp = []
 			for j in range(layers[i]):
-				tmp.append(round(random.uniform(-1.0, 1.0), 3))
+				tmp.append(random.uniform(-10.0, 10.0))
 			bias.append(tmp)
 		return bias
 
@@ -310,18 +309,17 @@ class Model:
 			for j in range(len(dataTrain)):
 
 				if j % batch == 0 and not firstIter:
-					self.inputLayer.updateWeightBias()
+					self.inputLayer.updateWeightBias(self.learning_rate)
 				firstIter = False
 
 				expected = dataTrain[j][0]
-
 				expect = [1, 1]
 				expect[expected] -= 1
 				prediction = self.inputLayer.feedForward(dataTrain[j][1:], [], func, loss, expect, train=True)
 				trainProbability.append(prediction[0])
 				trainPredictions.append(prediction.index(min(prediction)))
 				trainExpected.append(expected)
-			self.inputLayer.updateWeightBias()
+			self.inputLayer.updateWeightBias(self.learning_rate)
 
 			validationPrediction, validationExpected, validationProbability = self.validate(dataValid, func, loss)
 
@@ -331,12 +329,6 @@ class Model:
 			trainAccuracyHistory.append(self.getAccuracy(trainPredictions, trainExpected))
 			validationAccuracyHistory.append(self.getAccuracy(validationPrediction, validationExpected))
 
-
 			print(f'epoch {i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
 
-
-# TODO
-
-# getAccuracy -> accuracy int
-
-
+		# self.inputLayer.printLayers()
