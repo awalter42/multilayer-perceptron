@@ -7,7 +7,6 @@ from mlpClasses import Model
 def fetchData(file):
 	try:
 		file = open(file, "r")
-		# file.readline()
 	except:
 		sys.exit()
 

@@ -4,8 +4,7 @@ import math
 import mpmath
 from statistics import mean
 
-mpmath.mp.dps = 5
-
+mpmath.mp.dps = 3
 
 def sigmoid(x):
 	return float(1 / (1 + mpmath.exp(-x)))
@@ -87,14 +86,14 @@ class Layer:
 		for l in self.weight:
 			grad = []
 			for i in range(len(l)):
-				grad.append([])
+				grad.append(0)
 			self.gradWeight.append(grad)
 
 
 	def setBias(self, bias):
 		self.bias = bias
 		for i in range(len(bias)):
-			self.gradBias.append([])
+			self.gradBias.append(0)
 
 
 	def activate(self, output, func):
@@ -112,12 +111,12 @@ class Layer:
 	def updateWeightBias(self, learning_rate):
 		for i in range(len(self.weight)):
 			for j in range(len(self.weight[i])):
-				self.weight[i][j] -= learning_rate * mean(self.gradWeight[i][j])
-				self.gradWeight[i][j] = []
+				self.weight[i][j] -= learning_rate * self.gradWeight[i][j]
+				self.gradWeight[i][j] = 0
 
 		for i in range(len(self.bias)):
-			self.bias[i] -= learning_rate * mean(self.gradBias[i])
-			self.gradBias[i] = []
+			self.bias[i] -= learning_rate * self.gradBias[i]
+			self.gradBias[i] = 0
 
 		if not self.next.isOutput:
 			self.next.updateWeightBias(learning_rate)
@@ -160,13 +159,15 @@ class Layer:
 		if train:
 			derivated = self.derivActivate(z_list, func)
 			if self.isOutput:
-				costDeriv = derivBCE(expect[0], out[0])
+				costDeriv = []
+				costDeriv.append(derivBCE(expect[0], out[0]))
+				costDeriv.append(derivBCE(expect[1], out[1]))
 				# costDeriv = 2 * (expect[0] - out[0])
 
 
 				for j in range(self.size):
-					calc = 1 * derivated[j] * costDeriv
-					self.previous.gradBias[j].append(float(calc))
+					calc = 1 * derivated[j] * costDeriv[j]
+					self.previous.gradBias[j] += float(calc)
 
 				# for i in range(self.previous.size):
 				# 	for j in range(self.size):
@@ -177,14 +178,14 @@ class Layer:
 				for i in range(self.previous.size):
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
-						calc = prev_activated * derivated[j] * costDeriv
-						self.previous.gradWeight[i][j].append(float(calc))
+						calc = prev_activated * derivated[j] * costDeriv[j]
+						self.previous.gradWeight[i][j] += float(calc)
 
 				gradNeuron = []
 				for i in range(self.previous.size):
 					tab = []
 					for j in range(self.size):
-						calc = self.previous.weight[i][j] * derivated[j] * costDeriv
+						calc = self.previous.weight[i][j] * derivated[j] * costDeriv[j]
 						tab.append(float(calc))
 					gradNeuron.append(sum(tab))
 				self.previous.gradNeuron = gradNeuron
@@ -192,7 +193,7 @@ class Layer:
 			elif self.previous != None:
 				for j in range(self.size):
 					calc = 1 * derivated[j] * self.gradNeuron[j]
-					self.previous.gradBias[j].append(float(calc))
+					self.previous.gradBias[j] += float(calc)
 
 				# for i in range(self.previous.size):
 				# 	for j in range(self.size):
@@ -204,7 +205,7 @@ class Layer:
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
 						calc = prev_activated * derivated[j] * self.gradNeuron[j]
-						self.previous.gradWeight[i][j].append(float(calc))
+						self.previous.gradWeight[i][j] += float(calc)
 
 				gradNeuron = []
 				for i in range(self.previous.size):
@@ -329,6 +330,17 @@ class Model:
 			trainAccuracyHistory.append(self.getAccuracy(trainPredictions, trainExpected))
 			validationAccuracyHistory.append(self.getAccuracy(validationPrediction, validationExpected))
 
-			print(f'epoch {i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
+			if i > 0:
+				if trainLossHistory[-1] < trainLossHistory[-2]:
+					self.learning_rate *= 0.9
+				elif trainLossHistory[-1] > trainLossHistory[-2]:
+					self.learning_rate *= 1.2
 
+			print(f'epoch {"".join(["0" for t in range(len(str(epoch)) - len(str(i+1)))])}{i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
+
+		print(trainAccuracyHistory[-1], validationAccuracyHistory[-1])
 		# self.inputLayer.printLayers()
+
+
+###WORKS IN THIS SITUATION:
+###p train.py -l 20 -e 80 -b 100 -r 0.1
