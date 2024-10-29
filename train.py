@@ -2,6 +2,8 @@ import sys
 import argparse
 import random
 from mlpClasses import Model
+import numpy as np
+from statistics import mean
 
 
 def fetchData(file):
@@ -26,7 +28,7 @@ for i in range(30):
 	norm_vals.append([0,0])
 
 
-def normalize(data):
+def standardize(data):
 	global norm_vals
 
 	newData = []
@@ -36,9 +38,9 @@ def normalize(data):
 	for i in range(len(norm_vals)):
 		vals = [r[i + 1] for r in data]
 		if norm_vals[i] == [0,0]:
-			norm_vals[i] = [min(vals), max(vals)]
+			norm_vals[i] = [mean(vals), np.std(vals)]
 		for v in range(len(newData)):
-			newData[v].append((vals[v] - norm_vals[i][0]) / (norm_vals[i][1] - norm_vals[i][0]))
+			newData[v].append((vals[v] - norm_vals[i][0]) / norm_vals[i][1])
 
 	return newData
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 	parser.add_argument('-r', '--learning_rate', type=float, default=1, required=False)
 	parser.add_argument('-b', '--batch', type=int, default=10, required=False)
 
-	parser.add_argument('-s', '--seed', type=int, default=12)
+	parser.add_argument('-s', '--seed', type=int, default=None)
 
 	args = parser.parse_args()
 
