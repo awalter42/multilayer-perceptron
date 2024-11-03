@@ -92,25 +92,25 @@ class Layer:
 		for l in self.weight:
 			grad = []
 			for i in range(len(l)):
-				grad.append(0)
+				grad.append([])
 			self.gradWeight.append(grad)
 
 
 	def setBias(self, bias):
 		self.bias = bias
 		for i in range(len(bias)):
-			self.gradBias.append(0)
+			self.gradBias.append([])
 
 
 	def updateWeightBias(self, learning_rate):
 		for i in range(len(self.weight)):
 			for j in range(len(self.weight[i])):
-				self.weight[i][j] -= learning_rate * self.gradWeight[i][j]
-				self.gradWeight[i][j] = 0
+				self.weight[i][j] -= learning_rate * mean(self.gradWeight[i][j])
+				self.gradWeight[i][j] = []
 
 		for i in range(len(self.bias)):
-			self.bias[i] -= learning_rate * self.gradBias[i]
-			self.gradBias[i] = 0
+			self.bias[i] -= learning_rate * mean(self.gradBias[i])
+			self.gradBias[i] = []
 
 		if not self.next.isOutput:
 			self.next.updateWeightBias(learning_rate)
@@ -148,7 +148,7 @@ class Layer:
 				self.addValue(value)
 
 		if self.isOutput:
-			out = softmax(input_list)
+			out = softmax(z_list)
 			for value in out:
 				self.addValue(value)
 		else:
@@ -175,13 +175,13 @@ class Layer:
 
 				for j in range(self.size):
 					calc = 1 * derivated[j] * costDeriv[j]
-					self.previous.gradBias[j] += float(calc)
+					self.previous.gradBias[j].append(float(calc))
 
 				for i in range(self.previous.size):
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
 						calc = prev_activated * derivated[j] * costDeriv[j]
-						self.previous.gradWeight[i][j] += float(calc)
+						self.previous.gradWeight[i][j].append(float(calc))
 
 				gradNeuron = []
 				for i in range(self.previous.size):
@@ -195,13 +195,13 @@ class Layer:
 			elif self.previous != None:
 				for j in range(self.size):
 					calc = 1 * derivated[j] * self.gradNeuron[j]
-					self.previous.gradBias[j] += float(calc)
+					self.previous.gradBias[j].append(float(calc))
 
 				for i in range(self.previous.size):
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
 						calc = prev_activated * derivated[j] * self.gradNeuron[j]
-						self.previous.gradWeight[i][j] += float(calc)
+						self.previous.gradWeight[i][j].append(float(calc))
 
 				gradNeuron = []
 				for i in range(self.previous.size):
@@ -251,7 +251,7 @@ class Model:
 			for l in range(layers[i]):
 				weight_li.append([])
 				for j in range(layers[i + 1]):
-					weight_li[l].append(random.uniform(-10.0, 10.0))
+					weight_li[l].append(random.uniform(-0.5, 0.5))
 			weights.append(weight_li)
 		return weights
 
@@ -261,7 +261,7 @@ class Model:
 		for i in range(1, len(layers)):
 			tmp = []
 			for j in range(layers[i]):
-				tmp.append(random.uniform(-10.0, 10.0))
+				tmp.append(0)
 			bias.append(tmp)
 		return bias
 

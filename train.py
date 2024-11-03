@@ -64,8 +64,8 @@ if __name__ == '__main__':
 	rawTrainingData = fetchData('trainingData.csv')
 	rawValidData = fetchData('validationData.csv')
 
-	cleanTrainingData = normalize(rawTrainingData)
-	cleanValidData = normalize(rawValidData)
+	cleanTrainingData = standardize(rawTrainingData)
+	cleanValidData = standardize(rawValidData)
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
 	model = Model(nb_inputs, args.layer, args.learning_rate)
