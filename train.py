@@ -18,7 +18,7 @@ def fetchData(file):
 		line = line.replace('B', '0')
 		splitted = line.split(',')[1:]
 		splitted = [eval(v) for v in splitted]
-		data.append(splitted)
+		data.append(np.array(splitted))
 	file.close()
 	return data
 

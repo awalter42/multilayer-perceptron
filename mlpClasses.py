@@ -91,7 +91,10 @@ class Layer:
 
 
 	def setWeight(self, weight):
-		self.weight = weight
+		# print(weight)
+		# print(np.array(weight))
+		# exit()
+		self.weight = np.array(weight)
 		for l in self.weight:
 			grad = []
 			for i in range(len(l)):
@@ -100,7 +103,7 @@ class Layer:
 
 
 	def setBias(self, bias):
-		self.bias = bias
+		self.bias = np.array(bias)
 		for i in range(len(bias)):
 			self.gradBias.append([])
 
@@ -160,16 +163,20 @@ class Layer:
 			for value in out:
 				self.addValue(value)
 		else:
-			output = []
-			for _ in range(len(self.weight[0])):
-				output.append(0)
+			output = np.add(np.dot(input_list, self.weight), self.bias)
+			# output = np.add(output, self.bias)
+			# print(len(output))
+			# exit()
+			# output = []
+			# for _ in range(len(self.weight[0])):
+			# 	output.append(0)
 
-			for i in range(len(self.weight)):
-				for j in range(len(self.weight[i])):
-					output[j] += input_list[i] * self.weight[i][j]
+			# for i in range(len(self.weight)):
+			# 	for j in range(len(self.weight[i])):
+			# 		output[j] += input_list[i] * self.weight[i][j]
 
-			for i in range(len(self.bias)):
-				output[i] += self.bias[i]
+			# for i in range(len(self.bias)):
+			# 	output[i] += self.bias[i]
 
 			activ_output = self.activate(output, func)
 			out = self.next.feedForward(activ_output, output, func, loss, expect, train=train)
@@ -287,7 +294,7 @@ class Model:
 			expected = line[0]
 
 			expect = [1, 1]
-			expect[expected] -= 1
+			expect[int(expected)] -= 1
 			prediction = self.inputLayer.feedForward(line[1:], [], func, loss, expect, train=False)
 			validationProbability.append(prediction[0])
 			validationPrediction.append(prediction.index(min(prediction)))
@@ -325,7 +332,7 @@ class Model:
 
 				expected = dataTrain[j][0]
 				expect = [1, 1]
-				expect[expected] -= 1
+				expect[int(expected)] -= 1
 				prediction = self.inputLayer.feedForward(dataTrain[j][1:], [], func, loss, expect, train=True)
 				trainProbability.append(prediction[0])
 				trainPredictions.append(prediction.index(min(prediction)))
@@ -349,7 +356,7 @@ class Model:
 
 			print(f'epoch {"".join(["0" for t in range(len(str(epoch)) - len(str(i+1)))])}{i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
 
-		if i == epoch-1:
-			for i in range(len(trainProbability)):
-				print(trainProbability[i], trainExpected[i], sep=" | ")
+		# if i == epoch-1:
+		# 	for i in range(len(trainProbability)):
+		# 		print(trainProbability[i], trainExpected[i], sep=" | ")
 		print(trainAccuracyHistory[-1], validationAccuracyHistory[-1])
