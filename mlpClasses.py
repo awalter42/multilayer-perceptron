@@ -49,7 +49,10 @@ def derivBCE(expected, predicted):
 		predicted -= 1e-15
 	elif predicted == 0:
 		predicted = 1e-15
-	return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
+	top_term = predicted - expected
+	bot_term = predicted * (1 - predicted)
+	return top_term / bot_term
+	# return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
 
 
 
@@ -143,12 +146,17 @@ class Layer:
 	def feedForward(self, input_list, z_list, func, loss, expect, train=False):
 
 		self.size = len(input_list)
+		self.values = []
 		if not self.isOutput:
 			for value in input_list:
 				self.addValue(value)
 
 		if self.isOutput:
 			out = softmax(z_list)
+			# has_nan = any(each != each for each in out)
+			# if has_nan:
+			# 	print(expect[1], out[1])
+			# 	exit()
 			for value in out:
 				self.addValue(value)
 		else:
@@ -169,25 +177,30 @@ class Layer:
 		if train:
 			derivated = self.derivActivate(z_list, func)
 			if self.isOutput:
-				costDeriv = []
-				costDeriv.append(derivBCE(expect[0], out[0]))
-				costDeriv.append(derivBCE(expect[1], out[1]))
+				# costDeriv = []
+				# costDeriv.append(derivBCE(expect[0], out[0]))
+				# costDeriv.append(derivBCE(expect[1], out[1]))
+				# derivated = []
+				# derivated.append(derivBCE(expect[0], z_list[0]))
+				# derivated.append(derivBCE(expect[1], z_list[1]))
+
+				# print(costDeriv, derivated)
 
 				for j in range(self.size):
-					calc = 1 * derivated[j] * costDeriv[j]
+					calc = 1 * (out[j] - expect[j])
 					self.previous.gradBias[j].append(float(calc))
 
 				for i in range(self.previous.size):
 					for j in range(self.size):
 						prev_activated = self.previous.values[i]
-						calc = prev_activated * derivated[j] * costDeriv[j]
+						calc = prev_activated * (out[j] - expect[j])
 						self.previous.gradWeight[i][j].append(float(calc))
 
 				gradNeuron = []
 				for i in range(self.previous.size):
 					tab = []
 					for j in range(self.size):
-						calc = self.previous.weight[i][j] * derivated[j] * costDeriv[j]
+						calc = self.previous.weight[i][j] * (out[j] - expect[j])
 						tab.append(float(calc))
 					gradNeuron.append(sum(tab))
 				self.previous.gradNeuron = gradNeuron
@@ -251,7 +264,7 @@ class Model:
 			for l in range(layers[i]):
 				weight_li.append([])
 				for j in range(layers[i + 1]):
-					weight_li[l].append(random.uniform(-0.5, 0.5))
+					weight_li[l].append(random.uniform(-1, 1))
 			weights.append(weight_li)
 		return weights
 
@@ -261,7 +274,7 @@ class Model:
 		for i in range(1, len(layers)):
 			tmp = []
 			for j in range(layers[i]):
-				tmp.append(0)
+				tmp.append(random.uniform(-1, 1))
 			bias.append(tmp)
 		return bias
 
@@ -303,6 +316,7 @@ class Model:
 			trainPredictions = []
 			trainExpected = []
 			firstIter = True
+			random.shuffle(dataTrain)
 			for j in range(len(dataTrain)):
 
 				if j % batch == 0 and not firstIter:
@@ -329,7 +343,7 @@ class Model:
 
 			if i > 0:
 				if trainLossHistory[-1] < trainLossHistory[-2]:
-					self.learning_rate *= 0.9
+					self.learning_rate *= 0.95
 				elif trainLossHistory[-1] > trainLossHistory[-2]:
 					self.learning_rate *= 1.2
 
@@ -339,4 +353,3 @@ class Model:
 			for i in range(len(trainProbability)):
 				print(trainProbability[i], trainExpected[i], sep=" | ")
 		print(trainAccuracyHistory[-1], validationAccuracyHistory[-1])
-		# self.inputLayer.printLayers()
