@@ -44,18 +44,6 @@ def binaryCrossEntropy(expectedOutputs, predictedOutputs):
 	return -1 * mean(l)
 
 
-def derivBCE(expected, predicted):
-	if predicted == 1:
-		predicted -= 1e-15
-	elif predicted == 0:
-		predicted = 1e-15
-	top_term = predicted - expected
-	bot_term = predicted * (1 - predicted)
-	return top_term / bot_term
-	# return -1 * ((expected / predicted) - ((1-expected) / (1-predicted)))
-
-
-
 class Layer:
 
 	def __init__(self, previous=None, output=False):
@@ -91,9 +79,6 @@ class Layer:
 
 
 	def setWeight(self, weight):
-		# print(weight)
-		# print(np.array(weight))
-		# exit()
 		self.weight = np.array(weight)
 		for l in self.weight:
 			grad = []
@@ -150,48 +135,22 @@ class Layer:
 
 		self.size = len(input_list)
 		self.values = []
-		if not self.isOutput:
-			for value in input_list:
-				self.addValue(value)
 
+		###FORWARD PASS###
 		if self.isOutput:
 			out = softmax(z_list)
-			# has_nan = any(each != each for each in out)
-			# if has_nan:
-			# 	print(expect[1], out[1])
-			# 	exit()
 			for value in out:
 				self.addValue(value)
 		else:
+			for value in input_list:
+				self.addValue(value)
 			output = np.add(np.dot(input_list, self.weight), self.bias)
-			# output = np.add(output, self.bias)
-			# print(len(output))
-			# exit()
-			# output = []
-			# for _ in range(len(self.weight[0])):
-			# 	output.append(0)
-
-			# for i in range(len(self.weight)):
-			# 	for j in range(len(self.weight[i])):
-			# 		output[j] += input_list[i] * self.weight[i][j]
-
-			# for i in range(len(self.bias)):
-			# 	output[i] += self.bias[i]
-
 			activ_output = self.activate(output, func)
 			out = self.next.feedForward(activ_output, output, func, loss, expect, train=train)
 
+		###BACKWARD PASS###
 		if train:
-			derivated = self.derivActivate(z_list, func)
 			if self.isOutput:
-				# costDeriv = []
-				# costDeriv.append(derivBCE(expect[0], out[0]))
-				# costDeriv.append(derivBCE(expect[1], out[1]))
-				# derivated = []
-				# derivated.append(derivBCE(expect[0], z_list[0]))
-				# derivated.append(derivBCE(expect[1], z_list[1]))
-
-				# print(costDeriv, derivated)
 
 				for j in range(self.size):
 					calc = 1 * (out[j] - expect[j])
@@ -213,6 +172,7 @@ class Layer:
 				self.previous.gradNeuron = gradNeuron
 
 			elif self.previous != None:
+				derivated = self.derivActivate(z_list, func)
 				for j in range(self.size):
 					calc = 1 * derivated[j] * self.gradNeuron[j]
 					self.previous.gradBias[j].append(float(calc))
@@ -238,14 +198,25 @@ class Layer:
 
 class Model:
 
-	def __init__(self, nb_inputs, layers, learning_rate):
-		self.layers = [nb_inputs] + layers + [2]
-		self.learning_rate = learning_rate
-		self.weights = self.generateWeights(self.layers)
-		self.bias = self.generateBias(self.layers)
-		self.expectedOutputs = []
-		self.predictedOutputs = []
+	def __init__(self, **kwargs):
+		if len(kwargs.keys()) == 3:
+			self.layers = [kwargs.get('nb_inputs')] + kwargs.get('layers') + [2]
+			self.learning_rate = kwargs.get('learning_rate')
+			self.weights = self.generateWeights(self.layers)
+			self.bias = self.generateBias(self.layers)
+		else:
+			self.makeModelFromFile(kwargs.get('file'))
+
 		self.setupLayers()
+
+
+	def makeModelFromFile(self, file):
+		try:
+			file = open(file, "r")
+			file.readline()
+		except:
+			print(f'There has been a problem when fetching the file {file}')
+
 
 
 	def setupLayers(self):
@@ -318,12 +289,15 @@ class Model:
 		trainAccuracyHistory = []
 		validationLossHistory = []
 		validationAccuracyHistory = []
+
 		for i in range(epoch):
 			trainProbability = []
 			trainPredictions = []
 			trainExpected = []
+
 			firstIter = True
 			random.shuffle(dataTrain)
+
 			for j in range(len(dataTrain)):
 
 				if j % batch == 0 and not firstIter:
@@ -333,18 +307,18 @@ class Model:
 				expected = dataTrain[j][0]
 				expect = [1, 1]
 				expect[int(expected)] -= 1
+
 				prediction = self.inputLayer.feedForward(dataTrain[j][1:], [], func, loss, expect, train=True)
+
 				trainProbability.append(prediction[0])
 				trainPredictions.append(prediction.index(min(prediction)))
 				trainExpected.append(expected)
+
 			self.inputLayer.updateWeightBias(self.learning_rate)
-
-
 			validationPrediction, validationExpected, validationProbability = self.validate(dataValid, func, loss)
 
 			trainLossHistory.append(binaryCrossEntropy(trainExpected, trainProbability))
 			validationLossHistory.append(binaryCrossEntropy(validationExpected, validationProbability))
-
 			trainAccuracyHistory.append(self.getAccuracy(trainPredictions, trainExpected))
 			validationAccuracyHistory.append(self.getAccuracy(validationPrediction, validationExpected))
 
@@ -355,8 +329,38 @@ class Model:
 					self.learning_rate *= 1.2
 
 			print(f'epoch {"".join(["0" for t in range(len(str(epoch)) - len(str(i+1)))])}{i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
+		print(f"\nAccuracy on last epoch:\n Training: {trainAccuracyHistory[-1]}\n validation: {validationAccuracyHistory[-1]}")
 
-		# if i == epoch-1:
-		# 	for i in range(len(trainProbability)):
-		# 		print(trainProbability[i], trainExpected[i], sep=" | ")
-		print(trainAccuracyHistory[-1], validationAccuracyHistory[-1])
+		if (input('Do you want to save this model? y/n: ') == 'y'):
+			self.saveModel(func)
+		else:
+			print('ok, not saving :(')
+
+
+	def saveModel(self, func):
+		try:
+			save_str = str(self.layers)[1:-1] + '\n\n'
+			
+			l = self.inputLayer
+			while not l.isOutput:
+				for i in range(l.size):
+					line = ''
+					for j in range(l.next.size):
+						line += str(l.weight[i][j]) + ','
+					line = line[:-1]
+					save_str += line + '\n'
+				save_str += '\n'
+				line = ''
+				for j in range(l.next.size):
+					line += str(l.bias[j]) + ','
+				line = line[:-1]
+				save_str += line + '\n\n'
+				l = l.next
+
+			save_str += func
+
+			f = open('ModelInfos', 'w')
+			f.write(save_str)
+			f.close()
+		except:
+			print('there has been a problem saving the model')
