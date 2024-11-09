@@ -68,6 +68,8 @@ if __name__ == '__main__':
 	cleanValidData = standardize(rawValidData)
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
-	model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
-	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs)
+	# model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
+	# model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs)
+
+	model = Model(file="ModelInfos")
 

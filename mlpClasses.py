@@ -210,12 +210,41 @@ class Model:
 		self.setupLayers()
 
 
-	def makeModelFromFile(self, file):
+	def makeModelFromFile(self, file_name):
 		try:
-			file = open(file, "r")
+			file = open(file_name, "r")
+			self.layers = file.readline()[:-1].split(', ')
+			for i in range(len(self.layers)):
+				self.layers[i] = int(self.layers[i])
 			file.readline()
+
+			weights = []
+			bias = []
+			for layer_size in self.layers[:-1]:
+				w = []
+				for _ in range(layer_size):
+					w.append(file.readline()[:-1].split(','))
+				weights.append(w)
+				file.readline()
+				bias.append(file.readline()[:-1].split(','))
+				file.readline()
+
+			func = file.readline()
+
+			for line in weights:
+				for tab in line:
+					for i in range(len(tab)):
+						tab[i] = eval(tab[i])
+			for line in bias:
+				for i in range(len(line)):
+					line[i] = eval(line[i])
+
+			self.weights = weights
+			self.bias = bias
+			self.func = func
+
 		except:
-			print(f'There has been a problem when fetching the file {file}')
+			print(f'There has been a problem when fetching the file {file_name}')
 
 
 
