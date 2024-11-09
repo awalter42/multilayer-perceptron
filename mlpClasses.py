@@ -247,6 +247,11 @@ class Model:
 			print(f'There has been a problem when fetching the file {file_name}')
 
 
+	def predict(self, data):
+
+		predi = self.inputLayer.feedForward(data, [], self.func, None, None, train=False)
+		print(predi)
+
 
 	def setupLayers(self):
 		self.inputLayer = Layer()
