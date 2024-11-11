@@ -318,7 +318,7 @@ class Model:
 		return mean(result)
 
 
-	def fit(self, dataTrain, dataValid, func, loss, batch, epoch):
+	def fit(self, dataTrain, dataValid, func, loss, batch, epoch, stan_vals):
 		trainLossHistory = []
 		trainAccuracyHistory = []
 		validationLossHistory = []
@@ -366,12 +366,12 @@ class Model:
 		print(f"\nAccuracy on last epoch:\n Training: {trainAccuracyHistory[-1]}\n validation: {validationAccuracyHistory[-1]}")
 
 		if (input('Do you want to save this model? y/n: ') == 'y'):
-			self.saveModel(func)
+			self.saveModel(func, stan_vals)
 		else:
 			print('ok, not saving :(')
 
 
-	def saveModel(self, func):
+	def saveModel(self, func, stan_vals):
 		try:
 			save_str = str(self.layers)[1:-1] + '\n\n'
 			
@@ -391,7 +391,14 @@ class Model:
 				save_str += line + '\n\n'
 				l = l.next
 
-			save_str += func
+			save_str += func + '\n' + '\n'
+
+			for val in stan_vals:
+				line = ''
+				for i in range(len(val)):
+					line += str(val[i]) + ','
+				line = line[:-1]
+				save_str += line + '\n'
 
 			f = open('ModelInfos', 'w')
 			f.write(save_str)
