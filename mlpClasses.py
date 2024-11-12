@@ -229,7 +229,14 @@ class Model:
 				bias.append(file.readline()[:-1].split(','))
 				file.readline()
 
-			func = file.readline()
+			func = file.readline()[:-1]
+			file.readline()
+
+			self.stan_vals = []
+			for _ in range(self.layers[0]):
+				val = file.readline()[:-1].split(',')
+				val = [eval(val[0]), eval(val[1])]
+				self.stan_vals.append(val)
 
 			for line in weights:
 				for tab in line:
@@ -248,6 +255,8 @@ class Model:
 
 
 	def predict(self, data):
+		for i in range(len(data)):
+			data[i] = (data[i] - self.stan_vals[i][0]) / self.stan_vals[i][1]
 
 		predi = self.inputLayer.feedForward(data, [], self.func, None, None, train=False)
 		print(predi)
