@@ -68,10 +68,9 @@ if __name__ == '__main__':
 	cleanValidData = standardize(rawValidData)
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
-	# model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
-	# model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs, stan_vals)
+	model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
+	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs, stan_vals)
 
-	model = Model(file="ModelInfos")
-	test = np.array([19.19,15.94,126.3,1157,0.08694,0.1185,0.1193,0.09667,0.1741,0.05176,1,0.6336,6.971,119.3,0.009406,0.03055,0.04344,0.02794,0.03156,0.003362,22.03,17.81,146.6,1495,0.1124,0.2016,0.2264,0.1777,0.2443,0.06251])
-	model.predict(test)
-
+	# model = Model(file="ModelInfos")
+	# test = np.array([14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504,1.214,2.188,8.077,106,0.006883,0.01094,0.01818,0.01917,0.007882,0.001754,14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504])
+	# model.predict(test)

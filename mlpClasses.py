@@ -2,6 +2,7 @@ import sys
 import random
 import numpy as np
 from statistics import mean
+import matplotlib.pyplot as plt
 
 def sigmoid(x):
 	if x > 0:
@@ -374,10 +375,22 @@ class Model:
 			print(f'epoch {"".join(["0" for t in range(len(str(epoch)) - len(str(i+1)))])}{i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
 		print(f"\nAccuracy on last epoch:\n Training: {trainAccuracyHistory[-1]}\n validation: {validationAccuracyHistory[-1]}")
 
+		self.makePlots(trainLossHistory, trainAccuracyHistory, validationLossHistory, validationAccuracyHistory)
+
 		if (input('Do you want to save this model? y/n: ') == 'y'):
 			self.saveModel(func, stan_vals)
 		else:
 			print('ok, not saving :(')
+
+
+	def makePlots(self, trainLoss, trainAccuracy, validLoss, validAccuracy):
+		trainLoss = np.array(trainLoss)
+		trainAccuracy = np.array(trainAccuracy)
+		validLoss = np.array(validLoss)
+		validAccuracy = np.array(validAccuracy)
+
+		fig1, ax1 = plt.subplots()
+		fig2, ax2 = plt.subplots()
 
 
 	def saveModel(self, func, stan_vals):
