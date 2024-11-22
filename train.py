@@ -2,12 +2,13 @@ import sys
 import argparse
 import random
 from mlpClasses import Model
+import numpy as np
+from statistics import mean
 
 
 def fetchData(file):
 	try:
 		file = open(file, "r")
-		# file.readline()
 	except:
 		sys.exit()
 
@@ -17,29 +18,29 @@ def fetchData(file):
 		line = line.replace('B', '0')
 		splitted = line.split(',')[1:]
 		splitted = [eval(v) for v in splitted]
-		data.append(splitted)
+		data.append(np.array(splitted))
 	file.close()
 	return data
 
 
-norm_vals = []
+stan_vals = []
 for i in range(30):	
-	norm_vals.append([0,0])
+	stan_vals.append([0,0])
 
 
-def normalize(data):
-	global norm_vals
+def standardize(data):
+	global stan_vals
 
 	newData = []
 	for i in range(len(data)):
 		newData.append([data[i][0]])
 
-	for i in range(len(norm_vals)):
+	for i in range(len(stan_vals)):
 		vals = [r[i + 1] for r in data]
-		if norm_vals[i] == [0,0]:
-			norm_vals[i] = [min(vals), max(vals)]
+		if stan_vals[i] == [0,0]:
+			stan_vals[i] = [mean(vals), np.std(vals)]
 		for v in range(len(newData)):
-			newData[v].append((vals[v] - norm_vals[i][0]) / (norm_vals[i][1] - norm_vals[i][0]))
+			newData[v].append((vals[v] - stan_vals[i][0]) / stan_vals[i][1])
 
 	return newData
 
@@ -54,7 +55,7 @@ if __name__ == '__main__':
 	parser.add_argument('-r', '--learning_rate', type=float, default=1, required=False)
 	parser.add_argument('-b', '--batch', type=int, default=10, required=False)
 
-	parser.add_argument('-s', '--seed', type=int, default=12)
+	parser.add_argument('-s', '--seed', type=int, default=None)
 
 	args = parser.parse_args()
 
@@ -63,10 +64,13 @@ if __name__ == '__main__':
 	rawTrainingData = fetchData('trainingData.csv')
 	rawValidData = fetchData('validationData.csv')
 
-	cleanTrainingData = normalize(rawTrainingData)
-	cleanValidData = normalize(rawValidData)
+	cleanTrainingData = standardize(rawTrainingData)
+	cleanValidData = standardize(rawValidData)
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
-	model = Model(nb_inputs, args.layer, args.learning_rate)
-	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs)
+	model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
+	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs, stan_vals)
 
+	# model = Model(file="ModelInfos")
+	# test = np.array([14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504,1.214,2.188,8.077,106,0.006883,0.01094,0.01818,0.01917,0.007882,0.001754,14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504])
+	# model.predict(test)

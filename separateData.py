@@ -15,16 +15,14 @@ def fetchData():
 
 def splitData(data):
 	length = len(data)
-	trainSize = int(length*0.8)
-	trainValidSize = int(length*0.9)
+	trainSize = int(length*0.85)
 	training = data[:trainSize]
-	validation = data[trainSize:trainValidSize]
-	test = data[trainValidSize:]
+	validation = data[trainSize:]
 
-	return training, validation, test
+	return training, validation
 
 
-def saveDatas(training, validation, test):
+def saveDatas(training, validation):
 	try:
 		f = open('trainingData.csv', 'w')
 		for line in training:
@@ -35,11 +33,6 @@ def saveDatas(training, validation, test):
 		for line in validation:
 			f.write(line)
 		f.close()
-
-		f = open('testData.csv', 'w')
-		for line in test:
-			f.write(line)
-		f.close()
 	except:
 		print('there has been a problem saving the data')
 
@@ -47,6 +40,6 @@ def saveDatas(training, validation, test):
 if __name__ == '__main__':
 	data = fetchData()
 	random.shuffle(data)
-	training, validation, test = splitData(data)
-	saveDatas(training, validation, test)
+	training, validation= splitData(data)
+	saveDatas(training, validation)
 
