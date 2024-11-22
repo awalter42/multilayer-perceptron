@@ -5,7 +5,7 @@ def fetchData():
 	try:
 		file = open('data.csv', "r")
 	except:
-		print(f'There has been a problem when fetching the file {file}')
+		print(f'There has been a problem when fetching the data file')
 	tab = []
 	for line in file:
 		tab.append(line)

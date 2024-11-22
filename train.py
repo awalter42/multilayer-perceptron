@@ -48,12 +48,12 @@ def standardize(data):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-l', '--layer', nargs='*', type=int, default=[10, 10], required=False)
-	parser.add_argument('-e', '--epochs', type=int, default=10, required=False)
-	parser.add_argument('-L', '--loss', type=str, default='binaryCrossentropy', required=False)
+	parser.add_argument('-l', '--layer', nargs='*', type=int, default=[5, 5], required=False)
+	parser.add_argument('-e', '--epochs', type=int, default=50, required=False)
+	# parser.add_argument('-L', '--loss', type=str, default='binaryCrossentropy', required=False)
 	parser.add_argument('-f', '--func', type=str, default='sigmoid', required=False)
-	parser.add_argument('-r', '--learning_rate', type=float, default=1, required=False)
-	parser.add_argument('-b', '--batch', type=int, default=10, required=False)
+	parser.add_argument('-r', '--learning_rate', type=float, default=0.2, required=False)
+	parser.add_argument('-b', '--batch', type=int, default=20, required=False)
 
 	parser.add_argument('-s', '--seed', type=int, default=None)
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 	nb_inputs = len(cleanTrainingData[0]) - 1
 
 	model = Model(nb_inputs=nb_inputs, layers=args.layer, learning_rate=args.learning_rate)
-	model.fit(cleanTrainingData, cleanValidData, args.func, args.loss, args.batch, args.epochs, stan_vals)
+	model.fit(cleanTrainingData, cleanValidData, args.func, 'binaryCrossentropy', args.batch, args.epochs, stan_vals)
 
 	# model = Model(file="ModelInfos")
 	# test = np.array([14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504,1.214,2.188,8.077,106,0.006883,0.01094,0.01818,0.01917,0.007882,0.001754,14.99,25.2,95.54,698.8,0.09387,0.05131,0.02398,0.02899,0.1565,0.05504])
