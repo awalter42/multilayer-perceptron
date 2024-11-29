@@ -260,7 +260,7 @@ class Model:
 			data[i] = (data[i] - self.stan_vals[i][0]) / self.stan_vals[i][1]
 
 		predi = self.inputLayer.feedForward(data, [], self.func, None, None, train=False)
-		print(predi)
+		return(predi)
 
 
 	def setupLayers(self):

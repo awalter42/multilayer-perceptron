@@ -6,10 +6,11 @@ import numpy as np
 from statistics import mean
 
 
-def fetchData(file):
+def fetchData(file_name):
 	try:
-		file = open(file, "r")
+		file = open(file_name, "r")
 	except:
+		print(f"problem fetching data from {file_name}")
 		sys.exit()
 
 	data = []
