@@ -329,6 +329,9 @@ class Model:
 
 
 	def fit(self, dataTrain, dataValid, func, loss, batch, epoch, stan_vals):
+		if (input('Did you export QT_QPA_PLATFORM=wayland? y/n: ') in ['n', 'N']):
+			exit()
+
 		trainLossHistory = []
 		trainAccuracyHistory = []
 		validationLossHistory = []
@@ -375,7 +378,7 @@ class Model:
 			print(f'epoch {"".join(["0" for t in range(len(str(epoch)) - len(str(i+1)))])}{i + 1}/{epoch} - train loss: {round(trainLossHistory[-1], 4)} - valid loss: {round(validationLossHistory[-1], 4)}')
 		print(f"\nAccuracy on last epoch:\n Training: {trainAccuracyHistory[-1]}\n validation: {validationAccuracyHistory[-1]}")
 
-		# self.makePlots(trainLossHistory, trainAccuracyHistory, validationLossHistory, validationAccuracyHistory)
+		self.makePlots(trainLossHistory, trainAccuracyHistory, validationLossHistory, validationAccuracyHistory)
 
 		if (input('Do you want to save this model? y/n: ') in ['y', 'Y']):
 			self.saveModel(func, stan_vals)
@@ -383,14 +386,29 @@ class Model:
 			print('The model values were not saved')
 
 
-	# def makePlots(self, trainLoss, trainAccuracy, validLoss, validAccuracy):
-	# 	trainLoss = np.array(trainLoss)
-	# 	trainAccuracy = np.array(trainAccuracy)
-	# 	validLoss = np.array(validLoss)
-	# 	validAccuracy = np.array(validAccuracy)
+	def makePlots(self, trainLoss, trainAccuracy, validLoss, validAccuracy):
+		trainLoss = np.array(trainLoss)
+		trainAccuracy = np.array(trainAccuracy)
+		validLoss = np.array(validLoss)
+		validAccuracy = np.array(validAccuracy)
 
-	# 	fig1, ax1 = plt.subplots()
-	# 	fig2, ax2 = plt.subplots()
+		fig1, (ax1, ax2) = plt.subplots(1, 2)
+
+		ax1.plot(trainLoss, label='trainLoss')
+		ax1.plot(validLoss, label='validLoss')
+		ax1.set_title('Loss Plot')
+		ax1.set_xlabel('epochs')
+		ax1.set_ylabel('Loss')
+		ax1.legend()
+
+		ax2.plot(trainAccuracy, label='trainAccuracy')
+		ax2.plot(validAccuracy, label='validAccuracy')
+		ax2.set_title('Accuracy Plot')
+		ax2.set_xlabel('epochs')
+		ax2.set_ylabel('Accuracy')
+		ax2.legend()
+
+		plt.show()
 
 
 	def saveModel(self, func, stan_vals):
