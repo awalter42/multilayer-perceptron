@@ -114,7 +114,7 @@ class Layer:
 		if f == 'sigmoid':
 			for i in range(len(output)):
 				activ_output.append(sigmoid(output[i]))
-		elif f == 'hyperbolicTangent' or f == 'tanh':
+		elif f == 'hyperbolictangent' or f == 'tanh':
 			for i in range(len(output)):
 				activ_output.append(hyperbolicTangent(output[i]))
 		return activ_output
@@ -126,7 +126,7 @@ class Layer:
 		if f == 'sigmoid':
 			for i in range(len(output)):
 				derivated.append(derivSigmoid(output[i]))
-		elif f == 'hyperbolicTangent' or f == 'tanh':
+		elif f == 'hyperbolictangent' or f == 'tanh':
 			for i in range(len(output)):
 				derivated.append(derivHyperbolic(output[i]))
 		return derivated
