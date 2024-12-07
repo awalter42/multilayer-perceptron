@@ -35,6 +35,7 @@ def saveDatas(training, validation):
 		f.close()
 	except:
 		print('there has been a problem saving the data')
+		exit()
 
 
 if __name__ == '__main__':

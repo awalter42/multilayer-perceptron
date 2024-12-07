@@ -205,8 +205,11 @@ class Model:
 			self.learning_rate = kwargs.get('learning_rate')
 			self.weights = self.generateWeights(self.layers)
 			self.bias = self.generateBias(self.layers)
-		else:
+		elif len(kwargs.keys()) == 1:
 			self.makeModelFromFile(kwargs.get('file'))
+		else:
+			print('there has been a problem with whatever you tried to do')
+			exit()
 
 		self.setupLayers()
 
@@ -253,6 +256,7 @@ class Model:
 
 		except:
 			print(f'There has been a problem when fetching the file {file_name}')
+			exit()
 
 
 	def predict(self, data):
@@ -331,6 +335,11 @@ class Model:
 	def fit(self, dataTrain, dataValid, func, loss, batch, epoch, stan_vals):
 		if (input('Did you export QT_QPA_PLATFORM=wayland? y/n: ') in ['n', 'N']):
 			exit()
+
+		x_train_shape = (len(dataTrain), len(dataTrain[0]))
+		x_valid_shape = (len(dataValid), len(dataValid[0]))
+		print(f'x_train shape: {x_train_shape}')
+		print(f'x_valid shape: {x_valid_shape}')
 
 		trainLossHistory = []
 		trainAccuracyHistory = []

@@ -8,6 +8,8 @@ if __name__ == '__main__':
 
 	while True:
 		vals = input("values: ")
+		if vals == 'exit':
+			exit()
 		values = vals.split(',')
 		for i in range(len(values)):
 			values[i] = float(values[i])
